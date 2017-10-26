@@ -1,7 +1,6 @@
 from builtins import range
 import numpy as np
-
-
+#winbaram1000
 def affine_forward(x, w, b):
     """
     Computes the forward pass for an affine (fully-connected) layer.
