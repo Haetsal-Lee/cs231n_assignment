@@ -20,11 +20,14 @@ def affine_forward(x, w, b):
     - cache: (x, w, b)
     """
     out = None
+
+    x_shape = x.shape
     ###########################################################################
     # TODO: Implement the affine forward pass. Store the result in out. You   #
     # will need to reshape the input into rows.                               #
     ###########################################################################
-    pass
+    x_reshape = np.reshape(x, (x_shape[0], np.int(np.prod(x_shape[1:]))))# x.shape = (N, D)  *   W (D, M)  => (N, M)
+    out = x_reshape.dot(w) + b#(N,M)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -52,7 +55,12 @@ def affine_backward(dout, cache):
     ###########################################################################
     # TODO: Implement the affine backward pass.                               #
     ###########################################################################
-    pass
+    x_shape = x.shape
+    x_reshape = np.reshape(x, (x_shape[0], np.int(np.prod(x_shape[1:]))))
+    x_reshape_transposed = np.transpose(x_reshape)
+    dw = x_reshape_transposed.dot(dout)
+    dx = np.reshape( np.dot( dout, np.transpose(w) ), x_shape)
+    db = np.sum(dout, axis=0)#winbaram I thought it shold be np.mean but np.sum is correct answer! => Then how a gradientis calculated on CNN filter
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -74,7 +82,7 @@ def relu_forward(x):
     ###########################################################################
     # TODO: Implement the ReLU forward pass.                                  #
     ###########################################################################
-    pass
+    out = x * (x>0) # apply (x>0 mask) equals max(0,input)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -97,7 +105,8 @@ def relu_backward(dout, cache):
     ###########################################################################
     # TODO: Implement the ReLU backward pass.                                 #
     ###########################################################################
-    pass
+    relu_mask = (x>0)
+    dx = dout * relu_mask
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
