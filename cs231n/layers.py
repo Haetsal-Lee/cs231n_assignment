@@ -384,11 +384,26 @@ def conv_forward_naive(x, w, b, conv_param):
     - cache: (x, w, b, conv_param)
     """
     out = None
+    N, C, H, W      = x.shape
+    F, C, HH, WW    = w.shape    
+    pad = conv_param['pad']
+    stride = conv_param['stride']#x.shape = (N, C, H, W)
+    H_prime = int(1 + (H + 2 * pad - HH) / stride)
+    W_prime = int(1 + (W + 2 * pad - WW) / stride)
+    out = np.zeros((N, F, H_prime, W_prime))
+    x_padded = np.pad(x, ( (0,0), (0,0), (pad, pad), (pad,pad) ), mode='constant', constant_values=0)
     ###########################################################################
     # TODO: Implement the convolutional forward pass.                         #
     # Hint: you can use the function np.pad for padding.                      #
     ###########################################################################
-    pass
+    for fi in range(F):
+        f_partial = w[fi, :, :, :] # (1, C, HH, WW)
+        b_partial = b[fi]
+        for hi in range(H_prime):
+            for wi in range(W_prime):
+                hh, ww = hi * stride, wi * stride
+                x_focus_area = x_padded[:,:,hh:hh+HH, ww:ww+WW]# (N,C,HH,WW )
+                out[:,fi,hi,wi] = np.sum( np.reshape( x_focus_area * f_partial, newshape=(N, C*HH*WW)), axis=1) +  b_partial #(N,C,HH,WW)*(1,C,HH,WW)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -410,10 +425,45 @@ def conv_backward_naive(dout, cache):
     - db: Gradient with respect to b
     """
     dx, dw, db = None, None, None
+    x, w, b, conv_param = cache
+    N, C, H, W      = x.shape
+    F, C, HH, WW    = w.shape
+    pad = conv_param['pad']
+    stride = conv_param['stride']#x.shape = (N, C, H, W)
+    H_prime = int(1 + (H + 2 * pad - HH) / stride)
+    W_prime = int(1 + (W + 2 * pad - WW) / stride)
+    out = np.zeros((N, F, H_prime, W_prime))
+    x_padded = np.pad(x, ( (0,0), (0,0), (pad, pad), (pad,pad) ), mode='constant', constant_values=0)
+
+    dx_paded = np.zeros(x_padded.shape)
+    dx = dx_paded[:,:,pad:-pad,pad:-pad]
+    dw, db = np.zeros(w.shape), np.zeros(b.shape)
+
     ###########################################################################
     # TODO: Implement the convolutional backward pass.                        #
     ###########################################################################
-    pass
+    for fi in range(F):
+        d_f_partial = dw[fi, :, :, :]#(1, C, HH, WW)
+        d_b_partial = db[fi]
+        f_partial = w[fi, :, :, :] # (1, C, HH, WW)
+        b_partial = b[fi]
+        for hi in range(H_prime):
+            for wi in range(W_prime):
+                hh, ww = hi * stride, wi * stride
+                x_focus_area = x_padded[:,:,hh:hh+HH, ww:ww+WW]# N,C,HH,WW
+                
+                tmp_tiled = np.tile(f_partial, (N, *tuple( np.ones( len( f_partial.shape ),dtype=int )))) #(N,C,HH,WW)
+                dout_partial = (dout[:, fi, hi, wi])[:,np.newaxis,np.newaxis,np.newaxis]
+                #for i in range(N):
+                #    tmp_tiled[i,] = tmp_tiled[i,] * dout[i, fi, hi, wi]
+                #dx_paded[:,:,hh:hh+HH, ww:ww+WW] += tmp_tiled   #dx(N, C, HH, WW)
+                dx_paded[:,:,hh:hh+HH, ww:ww+WW] += tmp_tiled * dout_partial  #do same as commented code but more simple
+                d_f_partial += np.sum( dout_partial * x_focus_area , axis=0) # np.mean(N * (N,C,HH,WW))
+                db[fi]+= np.sum(dout[:, fi, hi, wi], axis=0)
+        #d_f_partial /= (H_prime * W_prime)
+        #db[fi] /= (H_prime * W_prime)
+
+        #winbaram# I can't understand why we don't have to np.sum, not np.mean and divice it by (H_prime * W_prime)....
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -436,10 +486,25 @@ def max_pool_forward_naive(x, pool_param):
     - cache: (x, pool_param)
     """
     out = None
+
+    N, C, H, W = x.shape
+    pH, pW = pool_param['pool_height'], pool_param['pool_width']
+    stride = pool_param['stride']
+    H_prime = int((H - pH) / stride + 1)
+    W_prime = int((W - pW) / stride + 1)
+
+    out = np.zeros((N, C, H_prime, W_prime))
     ###########################################################################
     # TODO: Implement the max pooling forward pass                            #
     ###########################################################################
-    pass
+    for hi in range(H_prime):
+        for wi in range(W_prime):
+            hh, ww = hi * stride, wi * stride
+            x_focus_area = x[:,:,hh:hh+stride, ww:ww+stride] #N,C,HH,WW
+            for ci in range(C):
+                for ni in range(N):
+                    x_focus_area2 = x_focus_area[ni,ci,:,:] # 1,1,HH,WW
+                    out[ni,ci,hi,wi]        = np.max(x_focus_area2)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -458,11 +523,28 @@ def max_pool_backward_naive(dout, cache):
     Returns:
     - dx: Gradient with respect to x
     """
-    dx = None
+    
+    x, pool_param = cache
+    dx = np.zeros(x.shape)
+    N, C, H, W = x.shape
+    pH, pW = pool_param['pool_height'], pool_param['pool_width']
+    stride = pool_param['stride']
+    H_prime = int((H - pH) / stride + 1)
+    W_prime = int((W - pW) / stride + 1)
     ###########################################################################
     # TODO: Implement the max pooling backward pass                           #
     ###########################################################################
-    pass
+    for hi in range(H_prime):
+        for wi in range(W_prime):
+            hh, ww = hi * stride, wi * stride
+            x_focus_area = x[:,:,hh:hh+stride, ww:ww+stride] #N,C,HH,WW
+            for ci in range(C):
+                for ni in range(N):
+                    dout_partial = dout[ni,ci, hi, wi]
+                    x_focus_area2 = x_focus_area[ni,ci,:,:] # 1,1,HH,WW
+                    flat_coords = np.argmax(x_focus_area2)
+                    hmax, wmax = np.unravel_index(flat_coords, x_focus_area2.shape)
+                    dx[ni,ci,hh+hmax, ww+wmax] += dout_partial
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
