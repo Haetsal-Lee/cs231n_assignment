@@ -203,6 +203,9 @@ class FullyConnectedNet(object):
             self.params['W' + str(i+1)] = np.random.normal(0, weight_scale, (layer_in, layer_out))
             #self.params['W' + str(i+1)] = np.random.randn(layer_in, layer_out) / np.sqrt(layer_in/2) #Xavier
             self.params['b' + str(i+1)] = np.zeros(layer_out)
+            if self.use_batchnorm and i<self.num_layers-1:
+                self.params['BN_gamma' + str(i+1)] = np.ones(layer_out)#np.random.normal(1, 1e-3, layer_out)#np.zeros(layer_out)
+                self.params['BN_beta' + str(i+1)] = np.zeros(layer_out)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -262,15 +265,24 @@ class FullyConnectedNet(object):
         ############################################################################
         out = None
         caches = {}
-        iterative_layer_forward = affine_relu_forward
-        iterative_layer_backward = affine_relu_backward
+        dropout_caches = {}
         for i in range(self.num_layers):
-            if i==0 :
-              out, caches[i] = iterative_layer_forward(X, self.params['W' + str(i+1)], self.params['b' + str(i+1)])
-            elif i==self.num_layers-1 :
-              scores, caches[i] = affine_forward(out, self.params['W' + str(i+1)], self.params['b' + str(i+1)])
-            else :
-              out, caches[i] = iterative_layer_forward(out, self.params['W' + str(i+1)], self.params['b' + str(i+1)])
+            if i==0 :#first layer
+              if self.use_batchnorm==False:
+                  out, caches[i] = affine_relu_forward(X, self.params['W' + str(i+1)], self.params['b' + str(i+1)])
+              elif self.use_batchnorm==True:
+                  out, caches[i] = affine_relu_bn_forward(X, self.params['W' + str(i+1)], self.params['b' + str(i+1)], self.params['BN_gamma' + str(i+1)], self.params['BN_beta' + str(i+1)], self.bn_params[i])
+              if self.use_dropout:
+                  out, dropout_caches[i] = dropout_forward(out, self.dropout_param)
+            elif i==self.num_layers-1 :#last layer
+                  scores, caches[i] = affine_forward(out, self.params['W' + str(i+1)], self.params['b' + str(i+1)])
+            else:
+              if self.use_batchnorm==False:
+                  out, caches[i] = affine_relu_forward(out, self.params['W' + str(i+1)], self.params['b' + str(i+1)])
+              elif self.use_batchnorm==True:
+                  out, caches[i] = affine_relu_bn_forward(out, self.params['W' + str(i+1)], self.params['b' + str(i+1)], self.params['BN_gamma' + str(i+1)], self.params['BN_beta' + str(i+1)], self.bn_params[i])
+              if self.use_dropout:
+                  out, dropout_caches[i] = dropout_forward(out, self.dropout_param)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -299,8 +311,14 @@ class FullyConnectedNet(object):
             if i==self.num_layers-1:
                 dOut, grads['W' + str(i+1)], grads['b' + str(i+1)] = affine_backward(dOut, caches[i])
             else:
-                dOut, grads['W' + str(i+1)], grads['b' + str(i+1)] = iterative_layer_backward(dOut, caches[i])
-            grads['W' + str(i+1)] += self.reg  * self.params['W' + str(i+1)]
+                if self.use_dropout:
+                    dOut = dropout_backward(dOut, dropout_caches[i])
+                if self.use_batchnorm==False:
+                  dOut, grads['W' + str(i+1)], grads['b' + str(i+1)] = affine_relu_backward(dOut, caches[i])
+                elif self.use_batchnorm==True:
+                  dOut, grads['W' + str(i+1)], grads['b' + str(i+1)], grads['BN_gamma' + str(i+1)], grads['BN_beta' + str(i+1)] = affine_relu_bn_backward(dOut, caches[i])
+                #dOut, grads['W' + str(i+1)], grads['b' + str(i+1)] = iterative_layer_backward(dOut, caches[i])
+            grads['W' + str(i+1)] += self.reg  * self.params['W' + str(i+1)]#L2 reg
 
         loss += smLoss
         for i in range(self.num_layers):
