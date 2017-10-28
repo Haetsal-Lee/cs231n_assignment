@@ -65,7 +65,10 @@ def sgd_momentum(w, dw, config=None):
     # TODO: Implement the momentum update formula. Store the updated value in #
     # the next_w variable. You should also use and update the velocity v.     #
     ###########################################################################
-    pass
+    v = config['momentum'] * v - dw * config['learning_rate']#different with lecture note..
+    next_w = w + v
+    #v = config['momentum'] * v - dw  #On lecture note
+    #next_w = w + v * config['learning_rate']
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -94,15 +97,18 @@ def rmsprop(x, dx, config=None):
     config.setdefault('cache', np.zeros_like(x))
 
     next_x = None
+    grad_sqaured = config['cache']
     ###########################################################################
     # TODO: Implement the RMSprop update formula, storing the next value of x #
     # in the next_x variable. Don't forget to update cache value stored in    #
     # config['cache'].                                                        #
     ###########################################################################
-    pass
+    grad_sqaured = config['decay_rate'] * grad_sqaured + (1 - config['decay_rate']) * dx * dx
+    next_x = x - config['learning_rate'] * dx / ( np.sqrt(grad_sqaured) + config['epsilon'] )
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
+    config['cache'] = grad_sqaured
 
     return next_x, config
 
@@ -126,19 +132,36 @@ def adam(x, dx, config=None):
     config.setdefault('beta1', 0.9)
     config.setdefault('beta2', 0.999)
     config.setdefault('epsilon', 1e-8)
-    config.setdefault('m', np.zeros_like(x))
-    config.setdefault('v', np.zeros_like(x))
+    config.setdefault('m', np.zeros_like(x))#first moment
+    config.setdefault('v', np.zeros_like(x))#second moment
     config.setdefault('t', 1)
 
     next_x = None
+    first_moment = config['m']
+    second_moment = config['v']
     ###########################################################################
     # TODO: Implement the Adam update formula, storing the next value of x in #
     # the next_x variable. Don't forget to update the m, v, and t variables   #
     # stored in config.                                                       #
     ###########################################################################
-    pass
+    #for ti in range(config['t']): ##On lecture note Adam uses (number of iteration) ,On paper it iterate unitil x converged
+    #    first_moment = config['beta1'] * first_moment + (1 - config['beta1']) * dx
+    #    second_moment = config['beta2'] * second_moment + (1 - config['beta2']) * dx * dx
+    #    first_unbias = first_moment / (1 - config['beta1'] ** (ti+1))
+    #    second_unbias = second_moment / (1 - config['beta2'] ** (ti+1))
+    #    x -= config['learning_rate'] * first_unbias / (np.sqrt(second_unbias) + config['epsilon'])
+    t = config['t']
+    t += 1
+    first_moment = config['beta1'] * first_moment + (1 - config['beta1']) * dx
+    second_moment = config['beta2'] * second_moment + (1 - config['beta2']) * dx * dx
+    first_unbias = first_moment / (1 - config['beta1'] ** t)
+    second_unbias = second_moment / (1 - config['beta2'] ** t)
+    x -= config['learning_rate'] * first_unbias / (np.sqrt(second_unbias) + config['epsilon'])
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
-
+    next_x = x    
+    config['m'] = first_moment
+    config['v'] = second_moment
     return next_x, config
