@@ -1,0 +1,7 @@
+*.swp
+*.pyc
+.env/*
+*.sln
+*.pyproj
+*.suo
+*.zip
