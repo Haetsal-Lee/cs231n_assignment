@@ -580,11 +580,6 @@ def spatial_batchnorm_forward(x, gamma, beta, bn_param):
     momentum = bn_param.get('momentum', 0.9)
     running_mean = bn_param.get('running_mean', np.zeros((C, H, W), dtype=x.dtype))
     running_var = bn_param.get('running_var', np.zeros((C, H, W), dtype=x.dtype))    
-    internal_bn_param = bn_param.copy()
-    out = np.zeros((N, C, H, W), dtype=x.dtype)
-    demo = np.zeros((C, H, W), dtype=x.dtype)
-    x_int = np.zeros((C,N,H,W), dtype=x.dtype)
-    x_minu_mu = np.zeros((C,N,H,W), dtype=x.dtype)
     ###########################################################################
     # TODO: Implement the forward pass for spatial batch normalization.       #
     #                                                                         #
