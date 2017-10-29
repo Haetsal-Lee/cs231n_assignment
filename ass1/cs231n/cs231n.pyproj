@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{eda2d60d-fe87-46aa-8677-29652de9f857}</ProjectGuid>
+    <ProjectHome />
+    <StartupFile>data_utils.py</StartupFile>
+    <SearchPath />
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <InterpreterId>Global|VisualStudio|grad_MM</InterpreterId>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+  <PropertyGroup>
+    <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="classifiers\k_nearest_neighbor.py" />
+    <Compile Include="classifiers\linear_classifier.py" />
+    <Compile Include="classifiers\linear_svm.py" />
+    <Compile Include="classifiers\neural_net.py" />
+    <Compile Include="classifiers\softmax.py" />
+    <Compile Include="classifiers\__init__.py" />
+    <Compile Include="data_utils.py" />
+    <Compile Include="features.py" />
+    <Compile Include="gradient_check.py" />
+    <Compile Include="vis_utils.py" />
+    <Compile Include="__init__.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="datasets\cifar-10-batches-py\readme.html" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="classifiers" />
+    <Folder Include="datasets\" />
+    <Folder Include="datasets\cifar-10-batches-py" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="Global|VisualStudio|grad_MM" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+</Project>
