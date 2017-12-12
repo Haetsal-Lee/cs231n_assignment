@@ -96,6 +96,10 @@ class CaptioningRNN(object):
         # by one relative to each other because the RNN should produce word (t+1)
         # after receiving word t. The first element of captions_in will be the START
         # token, and the first element of captions_out will be the first word.
+
+        # winbaram1000
+        # then, Will the last element of captions_out be the END token ???
+        # ->
         captions_in = captions[:, :-1]
         captions_out = captions[:, 1:]
 
@@ -137,7 +141,20 @@ class CaptioningRNN(object):
         # defined above to store loss and gradients; grads[k] should give the      #
         # gradients for self.params[k].                                            #
         ############################################################################
-        pass
+        if self.cell_type == 'rnn':
+            _1out, _1cache = affine_forward( features, W_proj, b_proj )
+            _2out, _2cache = word_embedding_forward( captions_in, W_embed )
+            _3out, _3cache = rnn_forward( _2out, _1out, Wx, Wh, b )
+            _4out, _4cache = temporal_affine_forward( _3out, W_vocab, b_vocab )
+
+            loss, d_4out = temporal_softmax_loss(_4out, captions_out, mask)
+
+            d_3out, grads['W_vocab'], grads['b_vocab'] = temporal_affine_backward(d_4out, _4cache)
+            d_2out, d_1out, grads['Wx'], grads['Wh'], grads['b'] = rnn_backward(d_3out, _3cache)
+            grads['W_embed'] = word_embedding_backward(d_2out, _2cache)
+            d_features, grads['W_proj'], grads['b_proj'] = affine_backward(d_1out, _1cache)
+        #elif self.cell_type == 'lstm':
+            
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
