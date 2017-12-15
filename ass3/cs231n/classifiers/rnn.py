@@ -216,7 +216,27 @@ class CaptioningRNN(object):
         # functions; you'll need to call rnn_step_forward or lstm_step_forward in #
         # a loop.                                                                 #
         ###########################################################################
-        pass
+        #_1out, _1cache = affine_forward( features, W_proj, b_proj )
+        #_2out, _2cache = word_embedding_forward( captions_in, W_embed )
+        #_3out, _3cache = rnn_forward( _2out, _1out, Wx, Wh, b )
+        #_4out, _4cache = temporal_affine_forward( _3out, W_vocab, b_vocab )
+
+
+
+        caption_idx=0
+        prev_hidden_state, _ = affine_forward( features, W_proj, b_proj )# featueres N,512
+        captions[ :, caption_idx ] = self._start
+        #print("prev_hidden_state shape", prev_hidden_state.shape)
+        for idx in range(max_length-1):
+            _2out, _                = word_embedding_forward( np.reshape( captions[:, caption_idx], (N,1) ), W_embed )# N,1
+            #print("_2out",_2out.shape, "prev_hidden_state", prev_hidden_state.shape)
+            prev_hidden_state, _    = rnn_step_forward( _2out.reshape((N,-1)), prev_hidden_state, Wx, Wh, b )# N,1 N,H
+            #print("prev_hidden_state.shape",prev_hidden_state.shape)
+            _4out, _                = affine_forward( prev_hidden_state, W_vocab, b_vocab )
+            y_pred                  = np.argmax(_4out, axis=1)
+            captions[:, caption_idx+1] = y_pred
+            caption_idx+=1
+
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
